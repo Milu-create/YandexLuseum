@@ -1,22 +1,21 @@
-n = int(input())
-k = '21'
-if n == 1:
-    print(1)
-elif n == 2:
-    print("1\n11")
-elif n == 3:
-    print("1\n11\n21")
-else:
-    print("1\n11\n21")
-    for i in range(3, n):
-        schet = 1
-        p = ''
-        for j in range(1, len(k)):
-            if k[j - 1] == k[j]:
-                schet += 1
-            else:
-                p += str(schet) + k[j - 1]
-                schet = 1
-        p += str(schet) + k[-1]
-        print(p)
-        k = p[:]
+import sys
+from io import BytesIO
+import requests
+from PIL import Image
+from map import get_tp
+
+
+toponym_to_find = " ".join(sys.argv[1:])
+geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
+geocoder_params = {"apikey": "40d1649f-0493-4b70-98ba-98533de7710b", "geocode": toponym_to_find,
+                   "format": "json"}
+response = requests.get(geocoder_api_server, params=geocoder_params)
+json_response = response.json()
+toponym = json_response["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+toponym_coodrinates = toponym["Point"]["pos"]
+toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+tll_string = ",".join([toponym_longitude, toponym_lattitude])
+map_params = {"ll": tll_string, "spn": ",".join(map(str, get_tp(toponym))), "l": "map", "pt": f"{tll_string},flag"}
+map_api_server = "http://static-maps.yandex.ru/1.x/"
+response = requests.get(map_api_server, params=map_params)
+Image.open(BytesIO(response.content)).show()
